@@ -5,7 +5,7 @@
 ---
 status:       PUBLISHED
 technologies: [Android, "Google Play services", "Google Fit"]
-categories:   ["Google Play services"]
+categories:   [Fitness]
 languages:    [Java]
 solutions:    [Mobile]
 github:       android/fit
