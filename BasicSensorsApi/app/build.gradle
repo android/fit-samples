@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         applicationId "com.google.android.gms.fit.samples.basicsensorsapi"
@@ -22,9 +22,9 @@ android {
 dependencies {
     // Note, specific version numbers are managed in gradle.properties. This is preferred since it
     // easily keeps sub-projects on the same versions.
-    compile "com.google.android.gms:play-services-fitness:${google_play_services_library}"
-    compile "com.google.android.gms:play-services-auth:${google_play_services_library}"
-    compile "com.android.support:appcompat-v7:${google_support_library}"
-    compile "com.android.support:design:${google_support_library}"
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "com.google.android.gms:play-services-fitness:11.6.0"
+    implementation "com.google.android.gms:play-services-auth:11.6.0"
+    implementation "com.android.support:appcompat-v7:26.1.0"
+    implementation "com.android.support:design:26.1.0"
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
