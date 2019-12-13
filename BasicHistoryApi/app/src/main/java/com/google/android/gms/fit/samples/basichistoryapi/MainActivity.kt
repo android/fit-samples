@@ -30,18 +30,29 @@ import com.google.android.gms.fit.samples.common.logger.LogWrapper
 import com.google.android.gms.fit.samples.common.logger.MessageOnlyLogFilter
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessOptions
-import com.google.android.gms.fitness.data.*
+import com.google.android.gms.fitness.data.DataPoint
+import com.google.android.gms.fitness.data.DataSet
+import com.google.android.gms.fitness.data.DataSource
+import com.google.android.gms.fitness.data.DataType
+import com.google.android.gms.fitness.data.Field
 import com.google.android.gms.fitness.request.DataDeleteRequest
 import com.google.android.gms.fitness.request.DataReadRequest
 import com.google.android.gms.fitness.request.DataUpdateRequest
 import com.google.android.gms.fitness.result.DataReadResponse
 import com.google.android.gms.tasks.Task
 import java.text.DateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 const val TAG = "BasicHistoryApi"
 
+/**
+ * This sample demonstrates how to use the History API of the Google Fit platform to insert data,
+ * query against existing data, and remove data. It also demonstrates how to authenticate a user
+ * with Google Play Services and how to properly represent data in a {@link DataSet}.
+ */
 class MainActivity : AppCompatActivity() {
     private val dateFormat = DateFormat.getDateInstance()
     private val fitnessOptions: FitnessOptions by lazy {
@@ -87,9 +98,6 @@ class MainActivity : AppCompatActivity() {
         } else signInAction()
     }
 
-    /**
-     * Signs the user out of Google Fit.
-     */
     private fun fitSignOut() {
         val signInOptions = GoogleSignInOptions.Builder().addExtension(fitnessOptions).build()
         val client = GoogleSignIn.getClient(this, signInOptions)
@@ -306,7 +314,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Updates and reads data by chaning [Task] from [.updateData] and [ ][.readHistoryData].
+     * Updates and reads data by chaining [Task] from [.updateData] and [ ][.readHistoryData].
      */
     private fun updateAndReadData() = updateData().continueWithTask { readHistoryData() }
 
