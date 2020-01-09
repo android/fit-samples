@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.android.gms.fit.samples.basichistorysessions" >
+    package="com.google.android.gms.fit.samples.basichistorysessionskotlin" >
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <application
         android:fullBackupContent="false"
@@ -24,7 +24,7 @@ limitations under the License.
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name="com.google.android.gms.fit.samples.basichistorysessionskotlin.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
