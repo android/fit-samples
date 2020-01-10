@@ -247,8 +247,6 @@ class MainActivity : AppCompatActivity() {
         logWrapper.next = msgFilter
         // On screen logging via a customized TextView.
         val logView = findViewById<View>(R.id.sample_logview) as LogView
-        // Fixing this lint errors adds logic without benefit.
-// noinspection AndroidLintDeprecation
         TextViewCompat.setTextAppearance(logView, R.style.Log)
         logView.setBackgroundColor(Color.WHITE)
         msgFilter.next = logView
