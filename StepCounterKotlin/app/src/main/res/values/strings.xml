@@ -18,8 +18,11 @@ limitations under the License.
 
     <string name="app_name">StepCounter</string>
     <string name="intro_text">Hi! Let\'s track daily cumulative steps. Use the menu to explore additional actions.</string>
-    <string name="action_dump_subs">List Active Subscriptions</string>
-    <string name="action_cancel_subs">Cancel subscriptions</string>
     <string name="action_settings">Settings</string>
-
+    <string name="settings">Settings</string>
+    <string name="ok">OK</string>
+    <string name="permission_rationale">Location data is used as part of the Google Fit API</string>
+    <string name="permission_denied_explanation">Permission was denied, but is needed for core
+        functionality.</string>
+    <string name="read_step_data">Read step data</string>
 </resources>

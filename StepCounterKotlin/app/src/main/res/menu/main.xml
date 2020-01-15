@@ -23,7 +23,7 @@ limitations under the License.
         app:showAsAction="never" />
 
     <item android:id="@+id/action_read_data"
-        android:title="Read step data"
+        android:title="@string/read_step_data"
         android:orderInCategory="100"
         app:showAsAction="never" />
 
