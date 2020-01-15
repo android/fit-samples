@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Cancels the ACTIVITY_SEGMENT subscription by calling unsubscribe on that [DataType].
+     * Cancels the TYPE_CALORIES_EXPENDED subscription by calling unsubscribe on that [DataType].
      */
     private fun cancelSubscription() {
         val dataTypeStr = DataType.TYPE_CALORIES_EXPENDED.toString()
