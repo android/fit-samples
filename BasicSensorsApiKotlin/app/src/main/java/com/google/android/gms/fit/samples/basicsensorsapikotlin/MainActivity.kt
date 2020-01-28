@@ -46,6 +46,15 @@ import java.util.concurrent.TimeUnit
 const val TAG = "BasicSensorsApi"
 
 /**
+ * This enum is used to define actions that can be performed after a successful sign in to Fit.
+ * One of these values is passed to the Fit sign-in, and returned in a successful callback, allowing
+ * subsequent execution of the desired action.
+ */
+enum class FitActionRequestCode {
+    FIND_DATA_SOURCES
+}
+
+/**
  * This sample demonstrates how to use the Sensors API of the Google Fit platform to find available
  * data sources and to register/unregister listeners to those sources. It also demonstrates how to
  * authenticate a user with Google Play Services.
@@ -53,12 +62,8 @@ const val TAG = "BasicSensorsApi"
 class MainActivity : AppCompatActivity() {
     private val fitnessOptions = FitnessOptions.builder().addDataType(DataType.TYPE_LOCATION_SAMPLE).build()
 
-    // Two maps are used in conjunction with the OAuth flow. This is in order to identify what
-    // function to execute once the flow has successfully completed.
-    private val signInActionMap = mapOf<() -> Any, Int>(
-            ::findFitnessDataSources to 1
-    )
-    private val signInResponseMap = signInActionMap.entries.associate { (k, v) -> v to k }
+    private val runningQOrLater =
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
 
     // [START dataPointListener_variable_reference]
     // Need to hold a reference to this listener, as it's passed into the "unregister"
@@ -77,14 +82,14 @@ class MainActivity : AppCompatActivity() {
         initializeLogging()
         // When permissions are revoked the app is restarted so onCreate is sufficient to check for
         // permissions core to the Activity's functionality.
-        checkPermissionsAndRun(::findFitnessDataSources)
+        checkPermissionsAndRun(FitActionRequestCode.FIND_DATA_SOURCES)
     }
 
-    private fun checkPermissionsAndRun(signInAction: () -> Any) {
-        if (hasRuntimePermissions()) {
-            fitSignIn(signInAction)
+    private fun checkPermissionsAndRun(fitActionRequestCode: FitActionRequestCode) {
+        if (permissionApproved()) {
+            fitSignIn(fitActionRequestCode)
         } else {
-            requestRuntimePermissions(signInAction)
+            requestRuntimePermissions(fitActionRequestCode)
         }
     }
 
@@ -92,30 +97,30 @@ class MainActivity : AppCompatActivity() {
      * Checks that the user is signed in, and if so, executes the specified function. If the user is
      * not signed in, initiates the sign in flow, specifying the post-sign in function to execute.
      *
-     * @param signInAction The function to execute if already signed in, or once signed in.
+     * @param requestCode The request code corresponding to the action to perform after sign in.
      */
-    private fun fitSignIn(signInAction: () -> Any) {
-        if (!hasOAuthPermissions()) {
-            val requestCode = signInActionMap[signInAction]
-            requestCode?.let {
+    private fun fitSignIn(requestCode: FitActionRequestCode) {
+        if (oAuthPermissionsApproved()) {
+            performActionForRequestCode(requestCode)
+        } else {
+            requestCode.let {
                 GoogleSignIn.requestPermissions(
                         this,
-                        requestCode,
+                        it.ordinal,
                         getGoogleAccount(), fitnessOptions)
             }
-        } else signInAction()
+        }
     }
 
-    private fun hasOAuthPermissions() = GoogleSignIn.hasPermissions(getGoogleAccount(), fitnessOptions)
+    private fun oAuthPermissionsApproved() = GoogleSignIn.hasPermissions(getGoogleAccount(), fitnessOptions)
 
+    /**
+     * Gets a Google account for use in creating the Fitness client. This is achieved by either
+     * using the last signed-in account, or if necessary, prompting the user to sign in.
+     * `getAccountForExtension` is recommended over `getLastSignedInAccount` as the latter can
+     * return `null` if there has been no sign in before.
+     */
     private fun getGoogleAccount() = GoogleSignIn.getAccountForExtension(this, fitnessOptions)
-
-    override fun onResume() {
-        super.onResume()
-        // This ensures that if the user denies the permissions then uses Settings to re-enable
-        // them, the app will start working.
-        fitSignIn(::findFitnessDataSources)
-    }
 
     /**
      * Handles the callback from the OAuth sign in flow, executing the post sign in function
@@ -125,13 +130,24 @@ class MainActivity : AppCompatActivity() {
 
         when (resultCode) {
             RESULT_OK -> {
-                val postSignInAction = signInResponseMap[requestCode]
-                postSignInAction?.let {
-                    postSignInAction()
+                val postSignInAction = FitActionRequestCode.values()[requestCode]
+                postSignInAction.let {
+                    performActionForRequestCode(postSignInAction)
                 }
             }
             else -> oAuthErrorMsg(requestCode, resultCode)
         }
+    }
+
+    /**
+     * Runs the desired method, based on the specified request code. The request code is typically
+     * passed to the Fit sign-in flow, and returned with the success callback. This allows the
+     * caller to specify which method, post-sign-in, should be called.
+     *
+     * @param requestCode The code corresponding to the action to perform.
+     */
+    private fun performActionForRequestCode(requestCode: FitActionRequestCode) = when (requestCode) {
+        FitActionRequestCode.FIND_DATA_SOURCES -> findFitnessDataSources()
     }
 
     private fun oAuthErrorMsg(requestCode: Int, resultCode: Int) {
@@ -253,20 +269,24 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "Ready")
     }
 
-    /** Returns the current state of the permissions needed.  */
-    private fun hasRuntimePermissions(): Boolean {
-        val permissionState = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        return permissionState == PackageManager.PERMISSION_GRANTED
+    private fun permissionApproved(): Boolean {
+        val approved = if (runningQOrLater) {
+            PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            true
+        }
+        return approved
     }
 
-    private fun requestRuntimePermissions(signInAction: () -> Any) {
-        val shouldProvideRationale = ActivityCompat
-                .shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)
+    private fun requestRuntimePermissions(requestCode: FitActionRequestCode) {
+        val shouldProvideRationale =
+                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)
 
         // Provide an additional rationale to the user. This would happen if the user denied the
         // request previously, but didn't check the "Don't ask again" checkbox.
-        val requestCode = signInActionMap[signInAction]
-        requestCode?.let {
+        requestCode.let {
             if (shouldProvideRationale) {
                 Log.i(TAG, "Displaying permission rationale to provide additional context.")
                 Snackbar.make(
@@ -277,7 +297,7 @@ class MainActivity : AppCompatActivity() {
                             // Request permission
                             ActivityCompat.requestPermissions(this,
                                     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                                    requestCode)
+                                    requestCode.ordinal)
                         }
                         .show()
             } else {
@@ -287,14 +307,13 @@ class MainActivity : AppCompatActivity() {
                 // previously and checked "Never ask again".
                 ActivityCompat.requestPermissions(this,
                         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                        requestCode)
+                        requestCode.ordinal)
             }
         }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
                                             grantResults: IntArray) {
-        Log.i(TAG, "onRequestPermissionResult" + grantResults.size)
         when {
             grantResults.isEmpty() -> {
                 // If user interaction was interrupted, the permission request
@@ -303,9 +322,9 @@ class MainActivity : AppCompatActivity() {
             }
             grantResults[0] == PackageManager.PERMISSION_GRANTED -> {
                 // Permission was granted.
-                val postPermissionAction = signInResponseMap[requestCode]
-                postPermissionAction?.let {
-                    fitSignIn(postPermissionAction)
+                val fitActionRequestCode = FitActionRequestCode.values()[requestCode]
+                fitActionRequestCode.let {
+                    fitSignIn(fitActionRequestCode)
                 }
             }
             else -> {
