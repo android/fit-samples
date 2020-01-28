@@ -49,6 +49,17 @@ import java.util.concurrent.TimeUnit
 const val TAG = "BasicHistoryApi"
 
 /**
+ * This enum is used to define actions that can be performed after a successful sign in to Fit.
+ * One of these values is passed to the Fit sign-in, and returned in a successful callback, allowing
+ * subsequent execution of the desired action.
+ */
+enum class FitActionRequestCode {
+    INSERT_AND_READ_DATA,
+    UPDATE_AND_READ_DATA,
+    DELETE_DATA
+}
+
+/**
  * This sample demonstrates how to use the History API of the Google Fit platform to insert data,
  * query against existing data, and remove data. It also demonstrates how to authenticate a user
  * with Google Play Services and how to properly represent data in a {@link DataSet}.
@@ -62,46 +73,32 @@ class MainActivity : AppCompatActivity() {
                 .build()
     }
 
-    // Two maps are used in conjunction with the OAuth flow. This is in order to identify what
-    // function to execute once the flow has successfully completed.
-    private val signInActionMap = mapOf<() -> Any, Int>(
-            ::insertAndReadData to 1,
-            ::updateAndReadData to 2,
-            ::deleteData to 3
-    )
-    private val signInResponseMap = signInActionMap.entries.associate { (k, v) -> v to k }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         initializeLogging()
 
-        fitSignIn(::insertAndReadData)
+        fitSignIn(FitActionRequestCode.INSERT_AND_READ_DATA)
     }
 
     /**
      * Checks that the user is signed in, and if so, executes the specified function. If the user is
      * not signed in, initiates the sign in flow, specifying the post-sign in function to execute.
      *
-     * @param signInAction The function to execute if already signed in, or once signed in.
+     * @param requestCode The request code corresponding to the action to perform after sign in.
      */
-    private fun fitSignIn(signInAction: () -> Any) {
-        if (!GoogleSignIn.hasPermissions(getGoogleAccount(), fitnessOptions)) {
-            val requestCode = signInActionMap[signInAction]
-            requestCode?.let {
+    private fun fitSignIn(requestCode: FitActionRequestCode) {
+        if (oAuthPermissionsApproved()) {
+            performActionForRequestCode(requestCode)
+        } else {
+            requestCode.let {
                 GoogleSignIn.requestPermissions(
                         this,
-                        requestCode,
+                        requestCode.ordinal,
                         getGoogleAccount(), fitnessOptions)
             }
-        } else signInAction()
-    }
-
-    private fun fitSignOut() {
-        val signInOptions = GoogleSignInOptions.Builder().addExtension(fitnessOptions).build()
-        val client = GoogleSignIn.getClient(this, signInOptions)
-        client.revokeAccess().addOnSuccessListener { Log.i(TAG, "Signed out") }
+        }
     }
 
     /**
@@ -112,13 +109,26 @@ class MainActivity : AppCompatActivity() {
 
         when (resultCode) {
             RESULT_OK -> {
-                val postSignInAction = signInResponseMap[requestCode]
-                postSignInAction?.let {
-                    postSignInAction()
+                val postSignInAction = FitActionRequestCode.values()[requestCode]
+                postSignInAction.let {
+                    performActionForRequestCode(postSignInAction)
                 }
             }
             else -> oAuthErrorMsg(requestCode, resultCode)
         }
+    }
+
+    /**
+     * Runs the desired method, based on the specified request code. The request code is typically
+     * passed to the Fit sign-in flow, and returned with the success callback. This allows the
+     * caller to specify which method, post-sign-in, should be called.
+     *
+     * @param requestCode The code corresponding to the action to perform.
+     */
+    private fun performActionForRequestCode(requestCode: FitActionRequestCode) = when (requestCode) {
+        FitActionRequestCode.INSERT_AND_READ_DATA -> insertAndReadData()
+        FitActionRequestCode.UPDATE_AND_READ_DATA -> updateAndReadData()
+        FitActionRequestCode.DELETE_DATA -> deleteData()
     }
 
     private fun oAuthErrorMsg(requestCode: Int, resultCode: Int) {
@@ -131,6 +141,14 @@ class MainActivity : AppCompatActivity() {
         Log.e(TAG, message)
     }
 
+    private fun oAuthPermissionsApproved() = GoogleSignIn.hasPermissions(getGoogleAccount(), fitnessOptions)
+
+    /**
+     * Gets a Google account for use in creating the Fitness client. This is achieved by either
+     * using the last signed-in account, or if necessary, prompting the user to sign in.
+     * `getAccountForExtension` is recommended over `getLastSignedInAccount` as the latter can
+     * return `null` if there has been no sign in before.
+     */
     private fun getGoogleAccount() = GoogleSignIn.getAccountForExtension(this, fitnessOptions)
 
     /**
@@ -388,16 +406,12 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_delete_data -> {
-                fitSignIn(::deleteData)
+                fitSignIn(FitActionRequestCode.DELETE_DATA)
                 true
             }
             R.id.action_update_data -> {
                 clearLogView()
-                fitSignIn(::updateAndReadData)
-                true
-            }
-            R.id.action_signoout -> {
-                fitSignOut()
+                fitSignIn(FitActionRequestCode.UPDATE_AND_READ_DATA)
                 true
             }
             else -> super.onOptionsItemSelected(item)

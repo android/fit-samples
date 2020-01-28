@@ -26,9 +26,4 @@
         android:title="@string/action_delete_session"
         android:orderInCategory="100"
         app:showAsAction="never" />
-
-    <item android:id="@+id/action_signoout"
-        android:title="@string/action_signout"
-        android:orderInCategory="100"
-        app:showAsAction="never" />
 </menu>
