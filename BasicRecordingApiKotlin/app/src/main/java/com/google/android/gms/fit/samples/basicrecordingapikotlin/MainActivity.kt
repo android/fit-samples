@@ -20,7 +20,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Menu
@@ -42,6 +41,17 @@ import com.google.android.material.snackbar.Snackbar
 const val TAG = "BasicRecordingApi"
 
 /**
+ * This enum is used to define actions that can be performed after a successful sign in to Fit.
+ * One of these values is passed to the Fit sign-in, and returned in a successful callback, allowing
+ * subsequent execution of the desired action.
+ */
+enum class FitActionRequestCode {
+    SUBSCRIBE,
+    CANCEL_SUBSCRIPTION,
+    DUMP_SUBSCRIPTIONS
+}
+
+/**
  * This sample demonstrates how to use the Recording API of the Google Fit platform to subscribe
  * to data sources, query against existing subscriptions, and remove subscriptions. It also
  * demonstrates how to authenticate a user with Google Play Services.
@@ -57,14 +67,8 @@ class MainActivity : AppCompatActivity() {
                 .build()
     }
 
-    // Two maps are used in conjunction with the OAuth flow. This is in order to identify what
-    // function to execute once the flow has successfully completed.
-    private val signInActionMap = mapOf<() -> Any, Int>(
-            ::subscribe to 1,
-            ::dumpSubscriptionsList to 2,
-            ::cancelSubscription to 3
-    )
-    private val signInResponseMap = signInActionMap.entries.associate { (k, v) -> v to k }
+    private val runningQOrLater =
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,35 +77,34 @@ class MainActivity : AppCompatActivity() {
         // screen, as well as to adb logcat.
         initializeLogging()
 
-        checkPermissionsAndRun(::subscribe)
+        checkPermissionsAndRun(FitActionRequestCode.SUBSCRIBE)
     }
 
-    private fun checkPermissionsAndRun(signInAction: () -> Any) {
-        if (!requiresActivityRecognitionPermission() || hasRuntimePermission()) {
-            fitSignIn(signInAction)
+    private fun checkPermissionsAndRun(fitActionRequestCode: FitActionRequestCode) {
+        if (permissionApproved()) {
+            fitSignIn(fitActionRequestCode)
         } else {
-            requestRuntimePermissions(signInAction)
+            requestRuntimePermissions(fitActionRequestCode)
         }
     }
-
-    private fun requiresActivityRecognitionPermission() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
     /**
      * Checks that the user is signed in, and if so, executes the specified function. If the user is
      * not signed in, initiates the sign in flow, specifying the post-sign in function to execute.
      *
-     * @param signInAction The function to execute if already signed in, or once signed in.
+     * @param requestCode The request code corresponding to the action to perform after sign in.
      */
-    private fun fitSignIn(signInAction: () -> Any) {
-        if (!hasOAuthPermissions()) {
-            val requestCode = signInActionMap[signInAction]
-            requestCode?.let {
+    private fun fitSignIn(requestCode: FitActionRequestCode) {
+        if (oAuthPermissionsApproved()) {
+            performActionForRequestCode(requestCode)
+        } else {
+            requestCode.let {
                 GoogleSignIn.requestPermissions(
                         this,
-                        requestCode,
+                        it.ordinal,
                         getGoogleAccount(), fitnessOptions)
             }
-        } else signInAction()
+        }
     }
 
     /**
@@ -112,13 +115,26 @@ class MainActivity : AppCompatActivity() {
 
         when (resultCode) {
             RESULT_OK -> {
-                val postSignInAction = signInResponseMap[requestCode]
-                postSignInAction?.let {
-                    postSignInAction()
+                val postSignInAction = FitActionRequestCode.values()[requestCode]
+                postSignInAction.let {
+                    performActionForRequestCode(postSignInAction)
                 }
             }
             else -> oAuthErrorMsg(requestCode, resultCode)
         }
+    }
+
+    /**
+     * Runs the desired method, based on the specified request code. The request code is typically
+     * passed to the Fit sign-in flow, and returned with the success callback. This allows the
+     * caller to specify which method, post-sign-in, should be called.
+     *
+     * @param requestCode The code corresponding to the action to perform.
+     */
+    private fun performActionForRequestCode(requestCode: FitActionRequestCode) = when (requestCode) {
+        FitActionRequestCode.SUBSCRIBE -> subscribe()
+        FitActionRequestCode.CANCEL_SUBSCRIPTION -> cancelSubscription()
+        FitActionRequestCode.DUMP_SUBSCRIPTIONS -> dumpSubscriptionsList()
     }
 
     private fun oAuthErrorMsg(requestCode: Int, resultCode: Int) {
@@ -131,8 +147,14 @@ class MainActivity : AppCompatActivity() {
         Log.e(TAG, message)
     }
 
-    private fun hasOAuthPermissions() = GoogleSignIn.hasPermissions(getGoogleAccount(), fitnessOptions)
+    private fun oAuthPermissionsApproved() = GoogleSignIn.hasPermissions(getGoogleAccount(), fitnessOptions)
 
+    /**
+     * Gets a Google account for use in creating the Fitness client. This is achieved by either
+     * using the last signed-in account, or if necessary, prompting the user to sign in.
+     * `getAccountForExtension` is recommended over `getLastSignedInAccount` as the latter can
+     * return `null` if there has been no sign in before.
+     */
     private fun getGoogleAccount() = GoogleSignIn.getAccountForExtension(this, fitnessOptions)
 
     /**
@@ -162,9 +184,9 @@ class MainActivity : AppCompatActivity() {
         Fitness.getRecordingClient(this, getGoogleAccount())
                 .listSubscriptions(DataType.TYPE_CALORIES_EXPENDED)
                 .addOnSuccessListener { subscriptions ->
-                    for (sc in subscriptions) {
-                        val dt = sc.dataType!!
-                        Log.i(TAG, "Active subscription for data type: ${dt.name}")
+                    for (subscription in subscriptions) {
+                        val dataType = subscription.dataType!!
+                        Log.i(TAG, "Active subscription for data type: ${dataType.name}")
                     }
 
                     if (subscriptions.isEmpty()) {
@@ -184,7 +206,7 @@ class MainActivity : AppCompatActivity() {
         // Invoke the Recording API to unsubscribe from the data type and specify a callback that
         // will check the result.
         // [START unsubscribe_from_datatype]
-        Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this)!!)
+        Fitness.getRecordingClient(this, getGoogleAccount())
                 .unsubscribe(DataType.TYPE_CALORIES_EXPENDED)
                 .addOnSuccessListener {
                     Log.i(TAG, "Successfully unsubscribed for data type: $dataTypeStr")
@@ -205,15 +227,15 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_create_subs -> {
-                checkPermissionsAndRun(::subscribe)
+                checkPermissionsAndRun(FitActionRequestCode.SUBSCRIBE)
                 true
             }
             R.id.action_cancel_subs -> {
-                checkPermissionsAndRun(::cancelSubscription)
+                checkPermissionsAndRun(FitActionRequestCode.CANCEL_SUBSCRIPTION)
                 true
             }
             R.id.action_dump_subs -> {
-                checkPermissionsAndRun(::dumpSubscriptionsList)
+                checkPermissionsAndRun(FitActionRequestCode.DUMP_SUBSCRIPTIONS)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -239,18 +261,24 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "Ready")
     }
 
-    private fun hasRuntimePermission(): Boolean {
-        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
+    private fun permissionApproved(): Boolean {
+        val approved = if (runningQOrLater) {
+            PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACTIVITY_RECOGNITION)
+        } else {
+            true
+        }
+        return approved
     }
 
-    private fun requestRuntimePermissions(signInAction: () -> Any) {
+    private fun requestRuntimePermissions(requestCode: FitActionRequestCode) {
         val shouldProvideRationale =
                 ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACTIVITY_RECOGNITION)
 
         // Provide an additional rationale to the user. This would happen if the user denied the
         // request previously, but didn't check the "Don't ask again" checkbox.
-        val requestCode = signInActionMap[signInAction]
-        requestCode?.let {
+        requestCode.let {
             if (shouldProvideRationale) {
                 Log.i(TAG, "Displaying permission rationale to provide additional context.")
                 Snackbar.make(
@@ -261,7 +289,7 @@ class MainActivity : AppCompatActivity() {
                             // Request permission
                             ActivityCompat.requestPermissions(this,
                                     arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
-                                    requestCode)
+                                    requestCode.ordinal)
                         }
                         .show()
             } else {
@@ -271,7 +299,7 @@ class MainActivity : AppCompatActivity() {
                 // previously and checked "Never ask again".
                 ActivityCompat.requestPermissions(this,
                         arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
-                        requestCode)
+                        requestCode.ordinal)
             }
         }
     }
@@ -286,9 +314,9 @@ class MainActivity : AppCompatActivity() {
             }
             grantResults[0] == PackageManager.PERMISSION_GRANTED -> {
                 // Permission was granted.
-                val postPermissionAction = signInResponseMap[requestCode]
-                postPermissionAction?.let {
-                    fitSignIn(postPermissionAction)
+                val fitActionRequestCode = FitActionRequestCode.values()[requestCode]
+                fitActionRequestCode.let {
+                    fitSignIn(fitActionRequestCode)
                 }
             }
             else -> {
