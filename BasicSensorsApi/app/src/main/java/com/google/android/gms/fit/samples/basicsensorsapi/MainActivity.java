@@ -158,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
               public void onSuccess(List<DataSource> dataSources) {
                 for (DataSource dataSource : dataSources) {
                   Log.i(TAG, "Data source found: " + dataSource.toString());
-                  Log.i(TAG, "Data Source type: " + dataSource.getDataType().getName());
+                  Log.i(TAG, "Data Source type: " + dataSource.getDataType().getStreamName());
 
                   // Let's register a listener to receive Activity data!
                   if (dataSource.getDataType().equals(DataType.TYPE_LOCATION_SAMPLE)
