@@ -18,12 +18,12 @@ Sleep can be written either as :
 - "Non-granular" - just sleep, no differentiating levels.
 
 This example demonstrates reading and writing granular sleep data. The app writes seven nights of
-sleep data to Google Fit, then uses either the Sessions client and History client to read the data
-back, depending on the level of aggregation chosen from the menu options.
+sleep data to Google Fit, then uses either the Sessions client or History client to read the data
+back depending on the level of aggregation chosen from the menu options.
 
 Granular sleep is represented in Fit in two parts:
 
-- A **session** covering the entire period of sleep, of activity type `SLEEP`.
+- A **session** covering the entire period of sleep of activity type `SLEEP`.
 - **Activity segments**, falling with the session, of any of the granular sleep types.
 
 See:

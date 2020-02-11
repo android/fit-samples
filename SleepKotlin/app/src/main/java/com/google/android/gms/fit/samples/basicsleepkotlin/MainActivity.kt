@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google LLC
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,10 +59,8 @@ const val TAG = "SleepKotlin"
 const val PERIOD_START_DATE_TIME = "2020-01-20T12:00:00Z"
 const val PERIOD_END_DATE_TIME = "2020-01-27T12:00:00Z"
 
-// Rename the project paths, application ID
-
 /**
- * This enum is used to define actions that can be performed after a successful sign in to Fit.
+ * Define actions that can be performed after a successful sign in to Fit.
  * One of these values is passed to the Fit sign-in, and returned in a successful callback, allowing
  * subsequent execution of the desired action.
  */
@@ -74,9 +72,10 @@ enum class FitActionRequestCode {
 }
 
 /**
- * This sample demonstrates reading and writing sleep data with the Fit API. This includes: Writing
- * granular sleep sessions, including light, deep, rem types of sleep, and also reading sleep
- * sessions, including the use of aggregation to obtain summaries by day and for an entire period.
+ * Demonstrates reading and writing sleep data with the Fit API:
+ *
+ * - Writes granular sleep sessions, including light, deep, rem types of sleep,.
+ * - Reads sleep sessions summarized by day and entire period via aggregation.
  *
  * For this example, seven nights of sleep data are written for a specific period of time, that
  * falls within the period PERIOD_START_DATE_TIME to PERIOD_END_DATE_TIME. This bounding period is
@@ -107,11 +106,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Put application specific code here.
         setContentView(R.layout.activity_main)
-        // This method sets up our custom logger, which will print all log messages to the device
-        // screen, as well as to adb logcat.
-        initializeLogging()
+        initializeCustomLogging()
         // When permissions are revoked the app is restarted so onCreate is sufficient to check for
         // permissions core to the Activity's functionality.
 
@@ -119,11 +115,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Creates a list of data sets, one for each night of sleep for a given week, that is used in
-     * inserting data into Google Fit.
-     *
-     * A DSL is used here simply in order to make the definition of all seven days
-     * concise.
+     * Creates a list of data sets, one for each night of sleep for a given week, for inserting data
+     * into Google Fit. (DSL used to simplify code.)
      *
      * @return A list of sleep data sets, one data set per night of sleep.
      */
@@ -513,23 +506,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Initializes a custom log class that outputs both to in-app targets and logcat.  */
-    private fun initializeLogging() { // Wraps Android's native log framework.
-        val logWrapper = LogWrapper()
-
-        // Using Log, front-end to the logging chain, emulates android.util.log method signatures.
-        Log.setLogNode(logWrapper)
-        // Filter strips out everything except the message text.
-        val msgFilter = MessageOnlyLogFilter()
-        logWrapper.next = msgFilter
-        // On screen logging via a customized TextView.
-        val logView = findViewById<View>(R.id.sample_logview) as LogView
-        TextViewCompat.setTextAppearance(logView, R.style.Log)
-        logView.setBackgroundColor(Color.WHITE)
-        msgFilter.next = logView
-        Log.i(TAG, "Ready")
-    }
-
     private fun permissionApproved(): Boolean {
         return if (runningQOrLater) {
             PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
@@ -616,5 +592,22 @@ class MainActivity : AppCompatActivity() {
                         .show()
             }
         }
+    }
+
+    /** Outputs both to in-app targets and logcat.  */
+    private fun initializeCustomLogging() { // Wraps Android's native log framework.
+        val logWrapper = LogWrapper()
+
+        // Using Log, front-end to the logging chain, emulates android.util.log method signatures.
+        Log.setLogNode(logWrapper)
+        // Filter strips out everything except the message text.
+        val msgFilter = MessageOnlyLogFilter()
+        logWrapper.next = msgFilter
+        // On screen logging via a customized TextView.
+        val logView = findViewById<View>(R.id.sample_logview) as LogView
+        TextViewCompat.setTextAppearance(logView, R.style.Log)
+        logView.setBackgroundColor(Color.WHITE)
+        msgFilter.next = logView
+        Log.i(TAG, "Ready")
     }
 }
