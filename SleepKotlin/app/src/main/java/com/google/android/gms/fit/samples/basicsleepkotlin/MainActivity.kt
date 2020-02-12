@@ -35,7 +35,12 @@ import com.google.android.gms.fit.samples.common.logger.LogWrapper
 import com.google.android.gms.fit.samples.common.logger.MessageOnlyLogFilter
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessActivities
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_AWAKE
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_DEEP
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_LIGHT
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_REM
 import com.google.android.gms.fitness.FitnessOptions
+import com.google.android.gms.fitness.data.DataPoint
 import com.google.android.gms.fitness.data.DataSet
 import com.google.android.gms.fitness.data.DataSource
 import com.google.android.gms.fitness.data.DataType
@@ -123,74 +128,71 @@ class MainActivity : AppCompatActivity() {
     private fun createSleepDataSets(): List<DataSet> {
         val dataSource = getSleepDataSource()
 
-        // The DSL allows data sets to be defined concisely by specifying just a start date/time
-        // then following with durations for each period of sleep type, to avoid the need for
-        // repetitive {@code DataSet} and {@code DataPoint} builders.
-        return dataSets(dataSource) {
-            dataSet("2020-01-20T23:00:00Z") {
-                // Monday
-                light(60)
-                deep(60)
-                light(60)
-                rem(60)
-                deep(60)
-                light(120)
-            }
-            dataSet("2020-01-21T22:30:00Z") {
-                // Tuesday
-                light(60)
-                deep(60)
-                light(30)
-                awake(30)
-                deep(60)
-                rem(60)
-                light(120)
-            }
-            dataSet("2020-01-22T22:00:00Z") {
-                // Wednesday
-                light(120)
-                deep(60)
-                rem(60)
-                deep(120)
-                light(120)
-            }
-            dataSet("2020-01-23T23:00:00Z") {
-                // Thursday
-                light(120)
-                deep(60)
-                awake(30)
-                deep(120)
-                light(120)
-            }
-            dataSet("2020-01-24T22:30:00Z") {
-                // Friday
-                light(60)
-                deep(60)
-                light(30)
-                deep(60)
-                rem(60)
-                light(90)
-            }
-            dataSet("2020-01-25T23:00:00Z") {
-                // Saturday
-                light(60)
-                deep(60)
-                light(60)
-                deep(60)
-                rem(60)
-                light(120)
-            }
-            dataSet("2020-01-26T22:30:00Z") {
-                // Sunday
-                light(60)
-                deep(60)
-                light(30)
-                awake(30)
-                deep(60)
-                rem(60)
-                light(120)
-            }
-        }
+        return listOf(
+                dataSource.createDataSet("2020-01-20T23:00:00Z",
+                        // Monday
+                        Pair(SLEEP_LIGHT, 60),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_LIGHT, 60),
+                        Pair(SLEEP_REM, 60),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-01-21T22:30:00Z",
+                        // Tuesday
+                        Pair(SLEEP_LIGHT, 60),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_LIGHT, 30),
+                        Pair(SLEEP_AWAKE, 30),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_REM, 60),
+                        Pair(SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-01-22T22:00:00Z",
+                        // Wednesday
+                        Pair(SLEEP_LIGHT, 120),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_REM, 60),
+                        Pair(SLEEP_DEEP, 120),
+                        Pair(SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-01-23T23:00:00Z",
+                        // Thursday
+                        Pair(SLEEP_LIGHT, 120),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_AWAKE, 30),
+                        Pair(SLEEP_DEEP, 120),
+                        Pair(SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-01-24T22:30:00Z",
+                        // Friday
+                        Pair(SLEEP_LIGHT, 60),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_LIGHT, 30),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_REM, 60),
+                        Pair(SLEEP_LIGHT, 90)
+                ),
+                dataSource.createDataSet("2020-01-25T23:00:00Z",
+                        // Saturday
+                        Pair(SLEEP_LIGHT, 60),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_LIGHT, 60),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_REM, 60),
+                        Pair(SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-01-26T22:30:00Z",
+                        // Sunday
+                        Pair(SLEEP_LIGHT, 60),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_LIGHT, 30),
+                        Pair(SLEEP_AWAKE, 30),
+                        Pair(SLEEP_DEEP, 60),
+                        Pair(SLEEP_REM, 60),
+                        Pair(SLEEP_LIGHT, 120)
+                )
+        )
     }
 
     private fun insertSleepSessions() {
@@ -610,4 +612,30 @@ class MainActivity : AppCompatActivity() {
         msgFilter.next = logView
         Log.i(TAG, "Ready")
     }
+}
+
+/**
+ * Creates a {@code DataSet} from a start date and time and a periods of fine-grained sleep
+ * activity.
+ *
+ * @param startDateTime The start of the sleep session in UTC
+ * @param sleepPeriods One or more sleep periods, defined as a Pair of {@code FitnessActivities}
+ *     string constant and duration in minutes.
+ * @return The created DataSet.
+ */
+fun DataSource.createDataSet(startDateTime: String, vararg sleepPeriods: Pair<String, Long>): DataSet {
+    val builder: DataSet.Builder = DataSet.builder(this)
+    var cursorMilliseconds = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+            .parse(startDateTime).time
+
+    for (sleepPeriod in sleepPeriods) {
+        val duration = TimeUnit.MINUTES.toMillis(sleepPeriod.second)
+        val dataPoint = DataPoint.builder(this)
+                .setActivityField(Field.FIELD_ACTIVITY, sleepPeriod.first)
+                .setTimeInterval(cursorMilliseconds, cursorMilliseconds + duration, TimeUnit.MILLISECONDS)
+                .build()
+        builder.add(dataPoint)
+        cursorMilliseconds += duration
+    }
+    return builder.build()
 }
