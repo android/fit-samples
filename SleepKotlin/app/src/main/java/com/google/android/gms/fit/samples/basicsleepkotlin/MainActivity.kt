@@ -36,15 +36,15 @@ import com.google.android.gms.fit.samples.common.logger.MessageOnlyLogFilter
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessActivities
 import com.google.android.gms.fitness.FitnessOptions
+import com.google.android.gms.fitness.data.DataPoint
 import com.google.android.gms.fitness.data.DataSet
 import com.google.android.gms.fitness.data.DataSource
 import com.google.android.gms.fitness.data.DataType
 import com.google.android.gms.fitness.data.Field
 import com.google.android.gms.fitness.data.Session
-import com.google.android.gms.fitness.request.DataReadRequest
+import com.google.android.gms.fitness.data.SleepStages
 import com.google.android.gms.fitness.request.SessionInsertRequest
 import com.google.android.gms.fitness.request.SessionReadRequest
-import com.google.android.gms.fitness.result.DataReadResponse
 import com.google.android.gms.fitness.result.SessionReadResponse
 import com.google.android.material.snackbar.Snackbar
 import java.text.DateFormat
@@ -56,8 +56,8 @@ const val TAG = "SleepKotlin"
 
 // For the purposes of this sample, a hard-coded period of time is defined, covering the nights of
 // sleep that will be written and read.
-const val PERIOD_START_DATE_TIME = "2020-01-20T12:00:00Z"
-const val PERIOD_END_DATE_TIME = "2020-01-27T12:00:00Z"
+const val PERIOD_START_DATE_TIME = "2020-08-10T12:00:00Z"
+const val PERIOD_END_DATE_TIME = "2020-08-17T12:00:00Z"
 
 /**
  * Define actions that can be performed after a successful sign in to Fit.
@@ -66,10 +66,21 @@ const val PERIOD_END_DATE_TIME = "2020-01-27T12:00:00Z"
  */
 enum class FitActionRequestCode {
     INSERT_SLEEP_SESSIONS,
-    READ_SLEEP_AGGREGATED_BY_DAY,
-    READ_SLEEP_AGGREGATED_BY_WEEK,
     READ_SLEEP_SESSIONS
 }
+
+/**
+ * Names for the {@code SleepStages} values.
+ */
+val SLEEP_STAGES = arrayOf(
+        "Unused",
+        "Awake (during sleep)",
+        "Sleep",
+        "Out-of-bed",
+        "Light sleep",
+        "Deep sleep",
+        "REM sleep"
+)
 
 /**
  * Demonstrates reading and writing sleep data with the Fit API:
@@ -83,22 +94,12 @@ enum class FitActionRequestCode {
  */
 class MainActivity : AppCompatActivity() {
     private val fitnessOptions = FitnessOptions.builder()
-            .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_READ)
             .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_WRITE)
+            .addDataType(DataType.TYPE_SLEEP_SEGMENT, FitnessOptions.ACCESS_WRITE)
             .build()
 
     private val runningQOrLater =
             android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
-
-    // Some responses from the Fit API are not filtered by activity type. This set is used as a
-    // filter to retain only those types relevant to sleep.
-    private val sleepActivities = setOf(
-            FitnessActivities.SLEEP,
-            FitnessActivities.SLEEP_LIGHT,
-            FitnessActivities.SLEEP_DEEP,
-            FitnessActivities.SLEEP_REM,
-            FitnessActivities.SLEEP_AWAKE
-    )
 
     // Defines the start and end of the period of interest in this example.
     private val periodStartMillis = millisFromRfc339DateString(PERIOD_START_DATE_TIME)
@@ -123,74 +124,71 @@ class MainActivity : AppCompatActivity() {
     private fun createSleepDataSets(): List<DataSet> {
         val dataSource = getSleepDataSource()
 
-        // The DSL allows data sets to be defined concisely by specifying just a start date/time
-        // then following with durations for each period of sleep type, to avoid the need for
-        // repetitive {@code DataSet} and {@code DataPoint} builders.
-        return dataSets(dataSource) {
-            dataSet("2020-01-20T23:00:00Z") {
-                // Monday
-                light(60)
-                deep(60)
-                light(60)
-                rem(60)
-                deep(60)
-                light(120)
-            }
-            dataSet("2020-01-21T22:30:00Z") {
-                // Tuesday
-                light(60)
-                deep(60)
-                light(30)
-                awake(30)
-                deep(60)
-                rem(60)
-                light(120)
-            }
-            dataSet("2020-01-22T22:00:00Z") {
-                // Wednesday
-                light(120)
-                deep(60)
-                rem(60)
-                deep(120)
-                light(120)
-            }
-            dataSet("2020-01-23T23:00:00Z") {
-                // Thursday
-                light(120)
-                deep(60)
-                awake(30)
-                deep(120)
-                light(120)
-            }
-            dataSet("2020-01-24T22:30:00Z") {
-                // Friday
-                light(60)
-                deep(60)
-                light(30)
-                deep(60)
-                rem(60)
-                light(90)
-            }
-            dataSet("2020-01-25T23:00:00Z") {
-                // Saturday
-                light(60)
-                deep(60)
-                light(60)
-                deep(60)
-                rem(60)
-                light(120)
-            }
-            dataSet("2020-01-26T22:30:00Z") {
-                // Sunday
-                light(60)
-                deep(60)
-                light(30)
-                awake(30)
-                deep(60)
-                rem(60)
-                light(120)
-            }
-        }
+        return listOf(
+                dataSource.createDataSet("2020-08-10T23:00:00Z",
+                        // Monday
+                        Pair(SleepStages.SLEEP_LIGHT, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 60),
+                        Pair(SleepStages.SLEEP_REM, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-08-11T22:30:00Z",
+                        // Tuesday
+                        Pair(SleepStages.SLEEP_LIGHT, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 30),
+                        Pair(SleepStages.AWAKE, 30),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_REM, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-08-12T22:00:00Z",
+                        // Wednesday
+                        Pair(SleepStages.SLEEP_LIGHT, 120),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_REM, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 120),
+                        Pair(SleepStages.SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-08-13T23:00:00Z",
+                        // Thursday
+                        Pair(SleepStages.SLEEP_LIGHT, 120),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.AWAKE, 30),
+                        Pair(SleepStages.SLEEP_DEEP, 120),
+                        Pair(SleepStages.SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-08-14T22:30:00Z",
+                        // Friday
+                        Pair(SleepStages.SLEEP_LIGHT, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 30),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_REM, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 90)
+                ),
+                dataSource.createDataSet("2020-08-15T23:00:00Z",
+                        // Saturday
+                        Pair(SleepStages.SLEEP_LIGHT, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_REM, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 120)
+                ),
+                dataSource.createDataSet("2020-08-16T22:30:00Z",
+                        // Sunday
+                        Pair(SleepStages.SLEEP_LIGHT, 60),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 30),
+                        Pair(SleepStages.AWAKE, 30),
+                        Pair(SleepStages.SLEEP_DEEP, 60),
+                        Pair(SleepStages.SLEEP_REM, 60),
+                        Pair(SleepStages.SLEEP_LIGHT, 120)
+                )
+        )
     }
 
     private fun insertSleepSessions() {
@@ -229,7 +227,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun getSleepDataSource(): DataSource {
         return DataSource.Builder()
-                .setDataType(DataType.TYPE_ACTIVITY_SEGMENT)
+                .setDataType(DataType.TYPE_SLEEP_SEGMENT)
                 .setType(DataSource.TYPE_RAW)
                 .setStreamName("MySleepSource")
                 .setAppPackageName(this)
@@ -237,15 +235,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Reads raw, unaggregated sessions from the Fit API. Note that the Sessions client allows
-     * filtering on data type, but not on activity type. The response therefore requires subsequent
-     * filtering to obtain just the sleep data.
+     * Reads sleep sessions from the Fit API, including any sleep {@code DataSet}s.
      */
     private fun readSleepSessions() {
         val client = Fitness.getSessionsClient(this, getGoogleAccount())
 
         val sessionReadRequest = SessionReadRequest.Builder()
-                .read(DataType.TYPE_ACTIVITY_SEGMENT)
+                .read(DataType.TYPE_SLEEP_SEGMENT)
+                // By default, only activity sessions are included, not sleep sessions. Specifying
+                // includeSleepSessions also sets the behaviour to *exclude* activity sessions.
+                .includeSleepSessions()
                 .readSessionsFromAllApps()
                 .setTimeInterval(periodStartMillis, periodEndMillis, TimeUnit.MILLISECONDS)
                 .build()
@@ -255,45 +254,6 @@ class MainActivity : AppCompatActivity() {
                 .addOnFailureListener { Log.e(TAG, "Unable to read sleep sessions", it) }
     }
 
-    /**
-     * Reads sessions but aggregates the data by activity segment. This means that each session
-     * contains one entry for each of the observed sleep types: light, deep etc, and the total
-     * duration of each.
-     */
-    private fun readSleepSummaryBySession() {
-        val client = Fitness.getHistoryClient(this, getGoogleAccount())
-
-        val dataReadRequest = DataReadRequest.Builder()
-                .enableServerQueries()
-                .aggregate(DataType.TYPE_ACTIVITY_SEGMENT, DataType.AGGREGATE_ACTIVITY_SUMMARY)
-                .bucketBySession(1, TimeUnit.SECONDS)
-                .setTimeRange(periodStartMillis, periodEndMillis, TimeUnit.MILLISECONDS)
-                .build()
-
-        client.readData(dataReadRequest)
-                .addOnSuccessListener { dumpSleepSummaryBySession(it) }
-                .addOnFailureListener { Log.e(TAG, "Unable to read sleep summary", it) }
-    }
-
-    /**
-     * Reads sleep data, aggregating by activity segment, but not segmenting by session. Instead, by
-     * bucketing by activity type, the aggregate over the whole time period is calculated for each
-     * granular type of sleep (as all granular sleep is of data type TYPE_ACTIVITY_SEGMENT).
-     */
-    private fun readSleepSummaryBySleepType() {
-        val client = Fitness.getHistoryClient(this, getGoogleAccount())
-
-        val dataReadRequest = DataReadRequest.Builder()
-                .enableServerQueries()
-                .aggregate(DataType.TYPE_ACTIVITY_SEGMENT, DataType.AGGREGATE_ACTIVITY_SUMMARY)
-                .bucketByActivityType(1, TimeUnit.SECONDS)
-                .setTimeRange(periodStartMillis, periodEndMillis, TimeUnit.MILLISECONDS)
-                .build()
-
-        client.readData(dataReadRequest)
-                .addOnSuccessListener { dumpSleepSummaryBySleepType(it) }
-                .addOnFailureListener { Log.e(TAG, "Unable to read sleep summary", it) }
-    }
 
     /**
      * Filters a response form the Sessions client to contain only sleep sessions, then writes to
@@ -303,47 +263,10 @@ class MainActivity : AppCompatActivity() {
      */
     private fun dumpSleepSessions(response: SessionReadResponse) {
         Log.clear()
-        val sessions = response.sessions.filter { it.activity == FitnessActivities.SLEEP }
 
-        for (session in sessions) {
+        for (session in response.sessions) {
             dumpSleepSession(session, response.getDataSet(session))
         }
-    }
-
-    /**
-     * Filters a response that has been bucketed by session, to just sleep-related activities, then
-     * writes to the log.
-     *
-     * @param response Response from the History client bucketed by session.
-     */
-    private fun dumpSleepSummaryBySession(response: DataReadResponse) {
-        Log.clear()
-
-        for (bucket in response.buckets) {
-            val session = bucket.session
-            session?.let {
-                if (session.activity == FitnessActivities.SLEEP) {
-                    dumpSleepSessionMetadata(session)
-                    dumpSleepDataSets(bucket.dataSets)
-                }
-            }
-        }
-    }
-
-    /**
-     * Filters a response that has been bucketed by activity type, to just sleep-related activities,
-     * then writes to the log.
-     *
-     * @param response Response from the History client bucketed by activity.
-     */
-    private fun dumpSleepSummaryBySleepType(response: DataReadResponse) {
-        Log.clear()
-        Log.i(TAG, "Sleep summary for $PERIOD_START_DATE_TIME - $PERIOD_END_DATE_TIME")
-        val dataSets = response.buckets
-                .filter { sleepActivities.contains(it.activity) }
-                .flatMap { it.dataSets }
-
-        dumpSleepDataSets(dataSets)
     }
 
     private fun dumpSleepSession(session: Session, dataSets: List<DataSet>) {
@@ -360,16 +283,12 @@ class MainActivity : AppCompatActivity() {
     private fun dumpSleepDataSets(dataSets: List<DataSet>) {
         for (dataSet in dataSets) {
             for (dataPoint in dataSet.dataPoints) {
-                val activity = dataPoint.getValue(Field.FIELD_ACTIVITY).asActivity()
-                // When a dataset has a data type of Activity Summary, then the aggregate duration
-                // is available as a value. However, for non-aggregated requests, Activity Segment
-                // does not have duration, which must therefore be calculated from start and end.
-                val millis = when (dataPoint.dataType) {
-                    DataType.AGGREGATE_ACTIVITY_SUMMARY -> dataPoint.getValue(Field.FIELD_DURATION).asInt().toLong()
-                    else -> dataPoint.getEndTime(TimeUnit.MILLISECONDS) - dataPoint.getStartTime(TimeUnit.MILLISECONDS)
-                }
-                val duration = TimeUnit.MILLISECONDS.toMinutes(millis)
-                Log.i(TAG, "\t$activity: $duration (mins)")
+                val sleepStageOrdinal = dataPoint.getValue(Field.FIELD_SLEEP_SEGMENT_TYPE).asInt()
+                val sleepStage = SLEEP_STAGES[sleepStageOrdinal]
+
+                val durationMillis = dataPoint.getEndTime(TimeUnit.MILLISECONDS) - dataPoint.getStartTime(TimeUnit.MILLISECONDS)
+                val duration = TimeUnit.MILLISECONDS.toMinutes(durationMillis)
+                Log.i(TAG, "\t$sleepStage: $duration (mins)")
             }
         }
     }
@@ -466,8 +385,6 @@ class MainActivity : AppCompatActivity() {
      */
     private fun performActionForRequestCode(requestCode: FitActionRequestCode) = when (requestCode) {
         FitActionRequestCode.INSERT_SLEEP_SESSIONS -> insertSleepSessions()
-        FitActionRequestCode.READ_SLEEP_AGGREGATED_BY_DAY -> readSleepSummaryBySession()
-        FitActionRequestCode.READ_SLEEP_AGGREGATED_BY_WEEK -> readSleepSummaryBySleepType()
         FitActionRequestCode.READ_SLEEP_SESSIONS -> readSleepSessions()
     }
 
@@ -492,14 +409,6 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.read_sleep_all -> {
                 checkPermissionsAndRun(FitActionRequestCode.READ_SLEEP_SESSIONS)
-                true
-            }
-            R.id.read_aggregated_by_day -> {
-                checkPermissionsAndRun(FitActionRequestCode.READ_SLEEP_AGGREGATED_BY_DAY)
-                true
-            }
-            R.id.read_aggregated_by_week -> {
-                checkPermissionsAndRun(FitActionRequestCode.READ_SLEEP_AGGREGATED_BY_WEEK)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -610,4 +519,30 @@ class MainActivity : AppCompatActivity() {
         msgFilter.next = logView
         Log.i(TAG, "Ready")
     }
+}
+
+/**
+ * Creates a {@code DataSet} from a start date and time and a periods of fine-grained sleep
+ * segments.
+ *
+ * @param startDateTime The start of the sleep session in UTC
+ * @param sleepPeriods One or more sleep periods, defined as a Pair of {@code SleepStages}
+ *     string constant and duration in minutes.
+ * @return The created DataSet.
+ */
+fun DataSource.createDataSet(startDateTime: String, vararg sleepPeriods: Pair<Int, Long>): DataSet {
+    val builder: DataSet.Builder = DataSet.builder(this)
+    var cursorMilliseconds = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+            .parse(startDateTime).time
+
+    for (sleepPeriod in sleepPeriods) {
+        val duration = TimeUnit.MINUTES.toMillis(sleepPeriod.second)
+        val dataPoint = DataPoint.builder(this)
+                .setField(Field.FIELD_SLEEP_SEGMENT_TYPE, sleepPeriod.first)
+                .setTimeInterval(cursorMilliseconds, cursorMilliseconds + duration, TimeUnit.MILLISECONDS)
+                .build()
+        builder.add(dataPoint)
+        cursorMilliseconds += duration
+    }
+    return builder.build()
 }

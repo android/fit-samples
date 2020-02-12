@@ -22,14 +22,4 @@ limitations under the License.
         android:title="@string/action_raw_by_day"
         android:orderInCategory="100"
         app:showAsAction="never" />
-
-    <item android:id="@+id/read_aggregated_by_day"
-        android:title="@string/action_aggregated_by_day"
-        android:orderInCategory="100"
-        app:showAsAction="never" />
-
-    <item android:id="@+id/read_aggregated_by_week"
-        android:title="@string/action_aggregated_by_week"
-        android:orderInCategory="100"
-        app:showAsAction="never" />
 </menu>

@@ -19,7 +19,7 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 29
-    buildToolsVersion '29.0.2'
+    buildToolsVersion '29.0.3'
 
     defaultConfig {
         applicationId "com.google.android.gms.fit.samples.basicsleepkotlin"
@@ -39,10 +39,10 @@ android {
 dependencies {
     // Note, specific version numbers are managed in gradle.properties. This is preferred since it
     // easily keeps sub-projects on the same versions.
-    implementation "com.google.android.gms:play-services-fitness:18.0.0"
-    implementation "com.google.android.gms:play-services-auth:17.0.0"
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.1.0'
+    implementation "com.google.android.gms:play-services-fitness:20.0.0"
+    implementation "com.google.android.gms:play-services-auth:18.1.0"
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.2.1'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
