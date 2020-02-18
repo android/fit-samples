@@ -3,8 +3,8 @@ Android Fit Sensors Api Sample
 
 A simple example of how to use the Sensors API on the Android Fit platform.
 
-- Android API Level > 9
-- Android Build Tools v23
+- Android API Level >= 14
+- Android Build Tools v29
 - Android Support Repository
 - Register a Google Project with an Android client per getting started instructions
   http://developers.google.com/fit/android/get-started
@@ -23,18 +23,19 @@ See the instructions for more details: http://developers.google.com/fit/android/
 Support
 -------
 
-The most common problem using these samples is a SIGN_IN_FAILED exception. Users can experience
-this after selecting a Google Account to connect to the FIT API. If you see the following in
-logcat output then make sure to register your Android app underneath a Google Project as outlined
-in the instructions for using this sample at: http://developers.google.com/fit/android/get-started
+The most common problem using these samples are sign in errors. Users can experience
+this after selecting a Google Account to connect to the Fit API. This can be
+seen in logcat.
 
-`10-26 14:40:37.082 1858-2370/? E/MDM: [138] b.run: Couldn't connect to Google API client: ConnectionResult{statusCode=API_UNAVAILABLE, resolution=null, message=null}`
+If you encounter this error, check the following steps:
+
+1.  Follow the instructions at http://developers.google.com/fit/android/get-started for registering an Android client.
+1.  Ensure that the [Fit API](https://console.developers.google.com/apis/api/fitness.googleapis.com/overview) is enabled for your Cloud project.
+1.  Check your [credentials](https://console.developers.google.com/apis/api/fitness.googleapis.com/credentials) for your Cloud project:
+    - Ensure that your **package name** for your credentials matches the sample.
+    - Ensure the **package name** matches the `applicationId` in the `app/build.gradle` file.
+    - Ensure the **Signing-certificate fingerprint** is entered correctly.
 
 Use the following channels for support:
 
 - Stack Overflow: http://stackoverflow.com/questions/tagged/android
-
-If you've found an error in this sample, please file an issue:
-https://github.com/android/fit
-
-Patches are encouraged, and may be submitted according to the instructions in CONTRIB.md.
