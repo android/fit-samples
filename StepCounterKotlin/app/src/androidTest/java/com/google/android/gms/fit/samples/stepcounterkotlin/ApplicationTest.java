@@ -1,4 +1,4 @@
-package com.google.android.gms.fit.samples.stepcounter;
+package com.google.android.gms.fit.samples.stepcounterkotlin;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

@@ -15,7 +15,7 @@
   limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.android.gms.fit.samples.basichistoryapi" >
+    package="com.google.android.gms.fit.samples.basichistoryapikotlin" >
 
     <application
         android:allowBackup="false"
@@ -24,7 +24,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name="com.google.android.gms.fit.samples.basichistoryapikotlin.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
