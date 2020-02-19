@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.android.gms.fit.samples.basichistoryapi
+package com.google.android.gms.fit.samples.basichistoryapikotlin
 
 import android.content.Intent
 import android.graphics.Color
@@ -23,7 +23,6 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.TextViewCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.fit.samples.common.logger.Log
 import com.google.android.gms.fit.samples.common.logger.LogView
 import com.google.android.gms.fit.samples.common.logger.LogWrapper

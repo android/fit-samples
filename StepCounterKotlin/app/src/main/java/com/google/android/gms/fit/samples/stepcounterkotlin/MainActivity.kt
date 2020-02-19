@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.android.gms.fit.samples.stepcounter
+package com.google.android.gms.fit.samples.stepcounterkotlin
 
 import android.Manifest
 import android.content.Intent
