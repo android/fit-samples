@@ -34,7 +34,7 @@
         app:layout_constraintVertical_bias="0.0">
 
         <Switch
-            android:id="@+id/fitSyncSwitch"
+            android:id="@+id/syncToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/enable_sync"
@@ -52,7 +52,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/fitSyncSwitch" />
+            app:layout_constraintTop_toBottomOf="@+id/syncToggle" />
 
         <TextView
             android:id="@+id/syncStatus"

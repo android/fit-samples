@@ -28,6 +28,9 @@ import kotlin.random.Random
 
 const val CHANNEL_ID = "FitSync"
 
+/**
+ * Class to provide notifications to the user for errors in syncing to Google Fit.
+ */
 class Notifications(private val context: Context) {
 
     init {

@@ -25,9 +25,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.widget.Button
-import android.widget.Switch
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.edit
@@ -41,6 +38,7 @@ import androidx.work.WorkInfo.State.RUNNING
 import androidx.work.WorkInfo.State.SUCCEEDED
 import androidx.work.WorkManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.fit.samples.synckotlin.databinding.ActivityMainBinding
 import com.google.android.material.snackbar.Snackbar
 
 enum class FitActionRequestCode {
@@ -50,26 +48,20 @@ enum class FitActionRequestCode {
 
 const val TAG = "FitSync"
 
+/** Entry point for the FitSync sample application. */
 class MainActivity : AppCompatActivity() {
     private lateinit var sharedPreferences: SharedPreferences
-    private lateinit var syncToggle: Switch
-    private lateinit var syncButton: Button
-    private lateinit var syncStatus: TextView
-    private lateinit var lastSuccessfulSync: TextView
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         sharedPreferences = getSharedPreferences(
             getString(R.string.preference_file_key),
             Context.MODE_PRIVATE
         )
-
-        syncToggle = findViewById(R.id.fitSyncSwitch)
-        syncButton = findViewById(R.id.syncButton)
-        syncStatus = findViewById(R.id.syncStatus)
-        lastSuccessfulSync = findViewById(R.id.lastSyncText)
 
         if (lastSyncFailed()) {
             Log.i(TAG, "Last sync failed")
@@ -95,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                     setSyncStatusMessage(state)
                     setLastSuccessfulSyncDateTime()
 
-                    syncButton.isEnabled = when (state) {
+                    binding.syncButton.isEnabled = when (state) {
                         RUNNING, FAILED -> false
                         /*
                             If the sync request is the result of the user pressing the button to do
@@ -106,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                          */
                         BLOCKED -> !isImmediate
                         ENQUEUED -> !isImmediate
-                        CANCELLED, SUCCEEDED -> syncToggle.isChecked
+                        CANCELLED, SUCCEEDED -> binding.syncToggle.isChecked
                     }
 
                     if (state == FAILED) {
@@ -118,11 +110,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun setSyncStatusMessage(state: WorkInfo.State) {
         Log.i(TAG, "FitSync worker state: $state")
-        syncStatus.text = state.toString()
+        binding.syncStatus.text = state.toString()
     }
 
     private fun setLastSuccessfulSyncDateTime() {
-        lastSuccessfulSync.text =
+        binding.lastSyncText.text =
             sharedPreferences.getString(getString(R.string.last_sync_date), "never")
     }
 
@@ -135,25 +127,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun disableSyncAndDisableToggle() {
         disableRepeatedSync()
-        syncToggle.isChecked = false
+        binding.syncToggle.isChecked = false
     }
 
     private fun setupSyncButton() {
-        syncButton.setOnClickListener {
-            syncButton.isEnabled = false
+        binding.syncButton.setOnClickListener {
+            binding.syncButton.isEnabled = false
             resetLastSyncFailed()
             checkPermissionsAndRun(FitActionRequestCode.IMMEDIATE_SYNC)
         }
     }
 
     private fun setupSyncToggle() {
-        syncToggle.isChecked = sharedPreferences.getBoolean(getString(R.string.sync_enabled), false)
-        syncToggle.setOnCheckedChangeListener { _, isChecked ->
+        binding.syncToggle.isChecked = sharedPreferences.getBoolean(getString(R.string.sync_enabled), false)
+        binding.syncToggle.setOnCheckedChangeListener { _, isChecked ->
             when (isChecked) {
                 true -> enableRepeatedSync()
                 false -> disableRepeatedSync()
             }
-            syncButton.isEnabled = isChecked
+            binding.syncButton.isEnabled = isChecked
         }
     }
 

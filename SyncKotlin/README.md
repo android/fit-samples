@@ -20,6 +20,8 @@ Many fitness apps have the requirement to sync data to Google Fit on a regular
 basis (e.g. daily). This sample demonstrates how to achieve this using
 [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager).
 
+The frequency of synchronizing to Google Fit is set by `PERIODIC_SYNC_INTERVAL_SECONDS` in `FitSyncWorker`.
+
 The sample also demonstrates:
 
 -   Allowing for user-initiated immediate syncs
@@ -29,7 +31,7 @@ The sample also demonstrates:
 -   Turning off the synchronisation after retries are exhausted and the
     sync process ultimately fails.
 
-In this sample, a toy database `StepsDatabase` is used as the source of data to
+In this sample, a mock database `MockStepsDatabase` is used as the source of data to
 be uploaded to Fit, which serves as a placeholder for a real local or remote
 repository.
 

@@ -21,7 +21,7 @@ package com.google.android.gms.fit.samples.synckotlin
  * small example, there is no actual storage, and a method is provided to simply return a number of
  * steps based on the length of time since the "database" was last queried.
  */
-class MockStepsDatabase {
+class StepsDatabase {
     fun getStepsSinceLastSync(syncTimeMillis: Long): StepsDelta {
         val now = System.currentTimeMillis()
         val steps = ((now - syncTimeMillis) / 3600).toInt()

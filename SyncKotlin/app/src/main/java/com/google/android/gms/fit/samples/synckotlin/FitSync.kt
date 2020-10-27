@@ -27,7 +27,6 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessOptions
 import com.google.android.gms.fitness.data.DataPoint
@@ -86,7 +85,7 @@ class FitSyncWorker(private val appContext: Context, workerParams: WorkerParamet
         }
 
         try {
-            performSync(getGoogleAccount(appContext, fitnessOptions))
+            performSync()
         } catch (e: Exception) {
             return buildRetryOrNotifyFailureResult(e.toString())
         }
@@ -122,17 +121,17 @@ class FitSyncWorker(private val appContext: Context, workerParams: WorkerParamet
         }
     }
 
-    private fun performSync(account: GoogleSignInAccount) {
+    private fun performSync() {
         Log.i(TAG, "Performing sync")
         // Get the last sync time
         val lastSyncMillis =
             sharedPreferences.getLong(appContext.getString(R.string.last_sync_timestamp), 0)
 
-        // Get any steps since lastSyncMillis. StepsDatabase is a class just for the purposes of
+        // Get any steps since lastSyncMillis. MockStepsDatabase is a class just for the purposes of
         // this sample, to serve as a placeholder for the storage an app might use, be it local or
         // in a app-specific cloud.
-        val db = StepsDatabase()
-        val stepsDelta = db.getStepsSinceLastSync(lastSyncMillis)
+        val database = MockStepsDatabase()
+        val stepsDelta = database.getStepsSinceLastSync(lastSyncMillis)
 
         if (isStopped) {
             return
