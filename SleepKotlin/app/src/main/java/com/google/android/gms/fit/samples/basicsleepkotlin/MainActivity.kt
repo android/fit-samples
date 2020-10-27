@@ -35,6 +35,10 @@ import com.google.android.gms.fit.samples.common.logger.LogWrapper
 import com.google.android.gms.fit.samples.common.logger.MessageOnlyLogFilter
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessActivities
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_AWAKE
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_DEEP
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_LIGHT
+import com.google.android.gms.fitness.FitnessActivities.SLEEP_REM
 import com.google.android.gms.fitness.FitnessOptions
 import com.google.android.gms.fitness.data.DataPoint
 import com.google.android.gms.fitness.data.DataSet
