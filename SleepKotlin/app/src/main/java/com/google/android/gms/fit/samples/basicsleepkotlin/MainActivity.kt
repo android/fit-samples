@@ -89,7 +89,7 @@ val SLEEP_STAGES = arrayOf(
 /**
  * Demonstrates reading and writing sleep data with the Fit API:
  *
- * - Writes granular sleep sessions, including light, deep, rem types of sleep,.
+ * - Writes granular sleep sessions, including light, deep, rem types of sleep.
  * - Reads sleep sessions summarized by day and entire period via aggregation.
  *
  * For this example, seven nights of sleep data are written for a specific period of time, that
@@ -508,7 +508,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Outputs both to in-app targets and logcat.  */
-    private fun initializeCustomLogging() { // Wraps Android's native log framework.
+    private fun initializeCustomLogging() {
+        // Wraps Android's native log framework.
         val logWrapper = LogWrapper()
 
         // Using Log, front-end to the logging chain, emulates android.util.log method signatures.
@@ -526,8 +527,7 @@ class MainActivity : AppCompatActivity() {
 }
 
 /**
- * Creates a {@code DataSet} from a start date and time and a periods of fine-grained sleep
- * segments.
+ * Creates a {@code DataSet} from a start date/time and sleep periods (fine-grained sleep segments).
  *
  * @param startDateTime The start of the sleep session in UTC
  * @param sleepPeriods One or more sleep periods, defined as a Pair of {@code SleepStages}
