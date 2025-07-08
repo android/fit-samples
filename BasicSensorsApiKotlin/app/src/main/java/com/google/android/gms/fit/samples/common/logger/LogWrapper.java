@@ -60,7 +60,7 @@ public class LogWrapper implements LogNode {
         // If an exeption was provided, convert that exception to a usable string and attach
         // it to the end of the msg method.
         if (tr != null) {
-            msg += "\n" + Log.getStackTraceString(tr);
+            useMsg += "\n" + Log.getStackTraceString(tr);
         }
 
         // This is functionally identical to Log.x(tag, useMsg);
