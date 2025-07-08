@@ -1,3 +1,8 @@
+> **Warning**
+> This sample has been deprecated and is no longer being maintained.
+> 
+> To find other samples that may be of interest, see [https://developer.android.com/samples](https://developer.android.com/samples).
+
 Android Fit Samples Repository
 ==============================
 The Google Fit APIs, including the Google Fit REST API, will no longer be available after June 30, 2025. As of May 1, 2024, developers cannot sign up to use these APIs.
